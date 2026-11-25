@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Daybook</title>
+  <meta name="description" content="Daybook is your private daily journal — meals, learning, training, money and mood — plus a professional trade journal. Works offline; everything stays on your device.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)">
+  <meta name="application-name" content="Daybook">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Daybook">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+
+  <!-- Apply the saved theme before first paint (settings.theme is mirrored to localStorage by app.js). -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('daybook.theme');
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.setAttribute('data-theme', t);
+          var c = t === 'dark' ? '#0b0d12' : '#f4f5f8';
+          var m = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < m.length; i++) { m[i].setAttribute('data-default', m[i].getAttribute('content')); m[i].setAttribute('content', c); }
+        }
+      } catch (e) { /* storage blocked — follow the system theme */ }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/charts.css">
+  <link rel="stylesheet" href="css/modules/today.css">
+  <link rel="stylesheet" href="css/modules/food.css">
+  <link rel="stylesheet" href="css/modules/learning.css">
+  <link rel="stylesheet" href="css/modules/training.css">
+  <link rel="stylesheet" href="css/modules/expenses.css">
+  <link rel="stylesheet" href="css/modules/trades.css">
+  <link rel="stylesheet" href="css/modules/trades-analytics.css">
+  <link rel="stylesheet" href="css/modules/goals.css">
+  <link rel="stylesheet" href="css/modules/calendar.css">
+  <link rel="stylesheet" href="css/modules/insights.css">
+  <link rel="stylesheet" href="css/modules/search.css">
+  <link rel="stylesheet" href="css/modules/settings.css">
+  <link rel="stylesheet" href="css/modules/onboarding.css">
+
+  <link rel="modulepreload" href="js/app.js">
+  <link rel="modulepreload" href="js/core/router.js">
+  <link rel="modulepreload" href="js/modules/registry.js">
+  <link rel="modulepreload" href="js/core/bus.js">
+  <link rel="modulepreload" href="js/core/db.js">
+  <link rel="modulepreload" href="js/core/settings.js">
+  <link rel="modulepreload" href="js/core/ui.js">
+  <link rel="modulepreload" href="js/core/icons.js">
+  <link rel="modulepreload" href="js/core/dates.js">
+</head>
+<body>
+  <!-- Boot splash: removed by app.js after the first page renders. -->
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <div class="boot-inner">
+      <div class="brand-mark boot-mark" aria-hidden="true">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><g fill="#fff"><path d="M176 250a80 80 0 0 1 160 0z"/><rect x="112" y="273" width="288" height="34" rx="17"/></g><path d="M256 144V100M334.77 179.07l32.7-29.44M177.23 179.07l-32.7-29.44" stroke="#fff" stroke-width="30" stroke-linecap="round"/><rect x="112" y="332" width="218" height="28" rx="14" fill="#fff" opacity=".8"/><rect x="112" y="384" width="138" height="28" rx="14" fill="#fff" opacity=".55"/></svg>
+      </div>
+      <div class="boot-name">Daybook</div>
+      <div class="boot-bar" aria-hidden="true"></div>
+      <span class="sh-sr" id="boot-status">Loading Daybook…</span>
+      <p class="boot-msg" id="boot-msg" hidden></p>
+      <div class="boot-actions" id="boot-actions" hidden>
+        <button class="boot-btn" type="button" id="boot-reload">Reload</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <div class="noscript">
+      <div>
+        <p><strong>Daybook needs JavaScript.</strong></p>
+        <p>Please enable JavaScript for this site and reload — your journal lives entirely on this device.</p>
+      </div>
+    </div>
+  </noscript>
+
+  <div id="app" class="app">
+    <button class="skip-link" type="button" id="skip-link">Skip to content</button>
+    <div class="route-progress" id="route-progress" aria-hidden="true"></div>
+
+    <!-- Desktop sidebar (≥ 960px) -->
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+      <a class="sb-brand" href="#/today" aria-label="Daybook — go to Today">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 512 512" aria-hidden="true"><g fill="#fff"><path d="M176 250a80 80 0 0 1 160 0z"/><rect x="112" y="273" width="288" height="34" rx="17"/></g><path d="M256 144V100M334.77 179.07l32.7-29.44M177.23 179.07l-32.7-29.44" stroke="#fff" stroke-width="30" stroke-linecap="round"/><rect x="112" y="332" width="218" height="28" rx="14" fill="#fff" opacity=".8"/><rect x="112" y="384" width="138" height="28" rx="14" fill="#fff" opacity=".55"/></svg></span>
+        <span>Daybook</span>
+      </a>
+      <div class="sb-actions">
+        <button class="sb-new" id="sb-new" type="button" aria-keyshortcuts="n"><span>New</span><kbd aria-hidden="true">N</kbd></button>
+        <button class="sb-search" id="sb-search" type="button" aria-keyshortcuts="/"><span>Search</span><kbd aria-hidden="true">/</kbd></button>
+      </div>
+      <nav class="sb-nav" id="sb-nav" aria-label="Main"></nav>
+      <div class="sb-footer" id="sb-footer"></div>
+    </aside>
+
+    <div class="app-main">
+      <!-- Mobile top bar (< 960px) -->
+      <header class="topbar" id="topbar">
+        <button class="tb-title" id="tb-title" type="button"></button>
+        <div class="tb-actions">
+          <button class="tb-btn" id="tb-search" type="button" aria-label="Search"></button>
+        </div>
+      </header>
+      <!-- Mobile journal switcher (Food · Learn · Train · Money) -->
+      <nav class="journal-switch" id="journal-switch" aria-label="Journal sections" hidden></nav>
+
+      <main id="view" tabindex="-1"></main>
+    </div>
+
+    <!-- Mobile bottom tab bar -->
+    <nav class="bottom-nav" id="bottom-nav" aria-label="Main navigation"></nav>
+
+    <button class="fab" id="fab" type="button" aria-label="Quick add" aria-keyshortcuts="n" title="Quick add (N)"></button>
+  </div>
+
+  <!-- Boot watchdog: friendly message instead of an endless splash if the app can't start. -->
+  <script>
+    (function () {
+      var reload = document.getElementById('boot-reload');
+      if (reload) reload.addEventListener('click', function () { location.reload(); });
+      window.__daybookBootFail = function (message, detail) {
+        var boot = document.getElementById('boot');
+        if (!boot) return;
+        boot.classList.remove('is-done');
+        boot.classList.add('is-error');
+        boot.removeAttribute('aria-hidden');
+        var msg = document.getElementById('boot-msg');
+        if (msg) {
+          msg.textContent = message || 'Daybook couldn’t start.';
+          if (detail) msg.title = detail;
+          msg.hidden = false;
+        }
+        var actions = document.getElementById('boot-actions');
+        if (actions) actions.hidden = false;
+      };
+      setTimeout(function () {
+        if (window.__daybookReady) return;
+        var msg = document.getElementById('boot-msg');
+        if (msg && msg.hidden) {
+          msg.textContent = 'This is taking longer than usual…';
+          msg.hidden = false;
+          var actions = document.getElementById('boot-actions');
+          if (actions) actions.hidden = false;
+        }
+      }, 12000);
+    })();
+  </script>
+  <script type="module" src="js/app.js" onerror="window.__daybookBootFail && window.__daybookBootFail('Daybook couldn’t load. Check your connection and reload.')"></script>
+</body>
+</html>

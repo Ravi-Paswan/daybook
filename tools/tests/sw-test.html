@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service worker test · Daybook</title>
+<link rel="icon" href="../../assets/icons/favicon-32.png" sizes="32x32">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9; --surface: #fff; --border: #e5e7eb; --text: #111827; --text-2: #4b5563; --text-3: #6b7280;
+    --pass: #059669; --fail: #dc2626; --skip: #b45309; --primary: #4f46e5;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { color-scheme: dark; --bg: #0b0d12; --surface: #151821; --border: #262a36; --text: #f3f4f6;
+            --text-2: #c4c8d2; --text-3: #9ca3af; --pass: #34d399; --fail: #f87171; --skip: #fbbf24; --primary: #818cf8; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; }
+  header img { width: 56px; height: 56px; }
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin: 32px 0 12px; }
+  .sub { color: var(--text-2); margin: 2px 0 0; }
+  .summary { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background: var(--surface);
+             border: 1px solid var(--border); border-radius: 16px; padding: 16px 20px; }
+  .summary strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .summary .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  ol { list-style: none; padding: 0; margin: 0; background: var(--surface); border: 1px solid var(--border);
+       border-radius: 16px; overflow: hidden; }
+  li { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); }
+  li:first-child { border-top: 0; }
+  .badge { font-size: 12px; font-weight: 700; letter-spacing: .04em; border-radius: 999px; padding: 2px 0;
+           text-align: center; height: fit-content; margin-top: 2px; }
+  .badge.pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 14%, transparent); }
+  .badge.fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 14%, transparent); }
+  .badge.skip { color: var(--skip); background: color-mix(in srgb, var(--skip) 14%, transparent); }
+  .name { font-weight: 600; }
+  .detail { color: var(--text-2); font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  .files { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; font-size: 12.5px;
+           background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px;
+           max-height: 360px; overflow: auto; margin: 0; }
+  .files div { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; }
+  .files span:last-child { color: var(--text-3); font-variant-numeric: tabular-nums; }
+  button { font: inherit; font-weight: 600; min-height: 44px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+           border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  button.primary { background: var(--primary); border-color: transparent; color: #fff; }
+  button:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 50%, transparent); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .note { color: var(--text-3); font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="../../assets/icons/icon.svg" alt="">
+    <div>
+      <h1>Service worker test</h1>
+      <p class="sub">Registers <code>sw.js</code>, checks install, activation, caching, updates and the manifest.</p>
+    </div>
+  </header>
+
+  <div class="summary" id="summary" role="status" aria-live="polite"><span>Running…</span></div>
+
+  <h2>Results</h2>
+  <ol id="results"></ol>
+
+  <h2>Offline cache</h2>
+  <div class="files" id="files"><div><span>Waiting for the service worker…</span></div></div>
+
+  <div class="actions">
+    <button class="primary" type="button" id="rerun">Run again</button>
+    <button type="button" id="reset">Unregister &amp; clear caches</button>
+  </div>
+  <p class="note">The test starts from a clean slate: it unregisters Daybook's service worker and clears its caches first.
+    The app registers it again the next time you open it.</p>
+</div>
+
+<script type="module">
+// Results contract (read by tools/smoke.py-driven checks):
+//   window.__testResults = [{ name, pass: true|false, skipped: bool, detail }]
+//   window.__testsDone   = true when finished;  window.__testSummary = { passed, failed, skipped, total }
+const results = [];
+window.__testResults = results;
+window.__testsDone = false;
+
+const ROOT = new URL('../../', location.href);           // app root (where sw.js lives)
+const SW_PATH = '../../sw.js';
+const SCOPE = '../../';
+const OLD_CACHE = 'daybook-v0-sw-test';                    // must be deleted by activate
+const FOREIGN_CACHE = 'other-app-sw-test';                 // must be left alone
+const RESET_FLAG = 'daybook-sw-test-reset';
+
+// Runtime files named in docs/SPEC.md section 1 (the precache must cover all of them).
+const SPEC_FILES = [
+  'index.html', 'manifest.webmanifest',
+  'css/tokens.css', 'css/base.css', 'css/components.css', 'css/charts.css',
+  ...['today', 'food', 'learning', 'training', 'expenses', 'trades', 'trades-analytics', 'goals', 'calendar',
+      'insights', 'search', 'settings', 'onboarding'].map((n) => `css/modules/${n}.css`),
+  'js/app.js',
+  ...['db', 'bus', 'settings', 'router', 'ui', 'undo', 'dates', 'format', 'charts', 'icons', 'metrics', 'images',
+      'backup'].map((n) => `js/core/${n}.js`),
+  ...['registry', 'today', 'food', 'learning', 'training', 'expenses', 'goals', 'calendar', 'insights', 'search',
+      'settings-view', 'onboarding', 'sample-data'].map((n) => `js/modules/${n}.js`),
+  ...['index', 'calc', 'editor', 'detail', 'analytics', 'calendar', 'dayplan'].map((n) => `js/modules/trades/${n}.js`),
+  ...['icon.svg', 'favicon-32.png', 'icon-192.png', 'icon-512.png', 'maskable-512.png', 'apple-touch-icon.png']
+    .map((n) => `assets/icons/${n}`),
+];
+
+const $ = (sel) => document.querySelector(sel);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const abs = (path) => new URL(path, ROOT).href;
+const rel = (url) => (url.startsWith(ROOT.href) ? url.slice(ROOT.href.length) || './' : url);
+const fmtKB = (n) => (n < 1024 ? `${n} B` : `${(n / 1024).toFixed(1)} KB`);
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function record(name, status, detail = '') {
+  const r = { name, pass: status === 'pass', skipped: status === 'skip', detail: String(detail || '') };
+  results.push(r);
+  const li = el('li');
+  li.append(el('span', `badge ${status}`, status.toUpperCase()));
+  const body = el('div');
+  body.append(el('div', 'name', name));
+  if (r.detail) body.append(el('div', 'detail', r.detail));
+  li.append(body);
+  $('#results').append(li);
+  return r;
+}
+
+// fn returns: string (pass detail) | {pass, detail} | {skip: true, detail}; throwing = fail.
+async function test(name, fn) {
+  try {
+    const out = await fn();
+    if (out && typeof out === 'object') {
+      if (out.skip) return record(name, 'skip', out.detail);
+      return record(name, out.pass === false ? 'fail' : 'pass', out.detail);
+    }
+    return record(name, 'pass', out);
+  } catch (err) {
+    return record(name, 'fail', (err && err.message) || String(err));
+  }
+}
+
+function finish(note) {
+  const passed = results.filter((r) => r.pass).length;
+  const skipped = results.filter((r) => r.skipped).length;
+  const failed = results.length - passed - skipped;
+  window.__testSummary = { passed, failed, skipped, total: results.length };
+  const s = $('#summary');
+  s.replaceChildren();
+  const ok = failed === 0;
+  const pill = el('span', 'pill');
+  const dot = el('span', 'dot');
+  dot.style.background = ok ? 'var(--pass)' : 'var(--fail)';
+  pill.append(dot, el('strong', null, ok ? 'All checks passed' : `${failed} failed`));
+  s.append(pill, el('span', null, `${passed} passed · ${failed} failed · ${skipped} skipped`));
+  if (note) s.append(el('span', 'sub', note));
+  window.__testsDone = true;
+}
+
+function waitForState(worker, target, ms = 20000) {
+  const order = ['parsed', 'installing', 'installed', 'activating', 'activated'];
+  return new Promise((resolve, reject) => {
+    const check = () => {
+      if (worker.state === 'redundant') { cleanup(); reject(new Error('worker became redundant (install failed?)')); return true; }
+      if (order.indexOf(worker.state) >= order.indexOf(target)) { cleanup(); resolve(worker.state); return true; }
+      return false;
+    };
+    const timer = setTimeout(() => { cleanup(); reject(new Error(`timed out waiting for "${target}" (state: ${worker.state})`)); }, ms);
+    const onChange = () => check();
+    const cleanup = () => { clearTimeout(timer); worker.removeEventListener('statechange', onChange); };
+    worker.addEventListener('statechange', onChange);
+    check();
+  });
+}
+
+function nextControllerChange(ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('no controllerchange event')), ms);
+    navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(timer); resolve(); }, { once: true });
+  });
+}
+
+function ask(worker, message, ms = 4000) {
+  return new Promise((resolve, reject) => {
+    const ch = new MessageChannel();
+    const timer = setTimeout(() => reject(new Error('no reply from the service worker')), ms);
+    ch.port1.onmessage = (e) => { clearTimeout(timer); resolve(e.data); };
+    worker.postMessage(message, [ch.port2]);
+  });
+}
+
+async function resetAll() {
+  const regs = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(regs.map((r) => r.unregister()));
+  const names = await caches.keys();
+  await Promise.all(names.filter((n) => n.startsWith('daybook-') || n === FOREIGN_CACHE).map((n) => caches.delete(n)));
+}
+
+async function poll(fn, ms = 3000, every = 100) {
+  const end = Date.now() + ms;
+  for (;;) {
+    const v = await fn();
+    if (v) return v;
+    if (Date.now() > end) return v;
+    await sleep(every);
+  }
+}
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`could not load ${rel(url)}`));
+    img.src = url;
+  });
+}
+
+function cornerAlpha(img) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, 1, 1).data[3];
+}
+
+async function renderCacheList(cacheName) {
+  const box = $('#files');
+  box.replaceChildren();
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  let total = 0;
+  const rows = [];
+  for (const req of keys) {
+    const res = await cache.match(req);
+    const size = res ? (await res.blob()).size : 0;
+    total += size;
+    rows.push([rel(req.url), size]);
+  }
+  rows.sort((a, b) => a[0].localeCompare(b[0]));
+  const head = el('div');
+  head.append(el('strong', null, `${cacheName}: ${rows.length} files`), el('span', null, fmtKB(total)));
+  box.append(head);
+  for (const [name, size] of rows) {
+    const row = el('div');
+    row.append(el('span', null, name), el('span', null, fmtKB(size)));
+    box.append(row);
+  }
+}
+
+async function main() {
+  if (!('serviceWorker' in navigator) || !('caches' in window)) {
+    record('Service worker API available', 'fail', window.isSecureContext
+      ? 'This browser has no service worker support.'
+      : 'Not a secure context: open over https:// or http://localhost.');
+    finish();
+    return;
+  }
+  record('Service worker API available', 'pass', `secure context: ${window.isSecureContext}`);
+
+  // 0 ── start from a clean slate (an earlier run or the app itself may have registered the worker)
+  const controlledAtStart = !!navigator.serviceWorker.controller;
+  const existing = await navigator.serviceWorker.getRegistrations();
+  if (controlledAtStart || existing.length) {
+    await resetAll();
+    let reloaded = false;
+    try { reloaded = sessionStorage.getItem(RESET_FLAG) === '1'; } catch (_) { /* storage blocked */ }
+    if (controlledAtStart && !reloaded) {
+      try { sessionStorage.setItem(RESET_FLAG, '1'); } catch (_) { /* ignore */ }
+      location.reload();
+      return;
+    }
+  }
+  try { sessionStorage.removeItem(RESET_FLAG); } catch (_) { /* ignore */ }
+
+  // 1 ── read the precache list straight from sw.js (single source of truth)
+  let shell = [];
+  await test('sw.js is served and declares an app-shell list', async () => {
+    const res = await fetch(abs('sw.js'), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for sw.js`);
+    const ct = res.headers.get('content-type') || '';
+    const src = await res.text();
+    const m = src.match(/const\s+SHELL\s*=\s*\[([\s\S]*?)\];/);
+    if (!m) throw new Error('could not find "const SHELL = [...]" in sw.js');
+    shell = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+    if (!/javascript/.test(ct)) return { pass: false, detail: `served as "${ct}" (needs a JavaScript MIME type)` };
+    return `${shell.length} shell URLs · ${ct}`;
+  });
+
+  await test('Precache list covers every runtime file in SPEC section 1', () => {
+    const missing = SPEC_FILES.filter((f) => !shell.includes(f));
+    const extra = shell.filter((f) => f !== './' && !SPEC_FILES.includes(f));
+    if (!shell.includes('./')) missing.unshift('./');
+    if (missing.length) return { pass: false, detail: `missing: ${missing.join(', ')}` };
+    return `all ${SPEC_FILES.length} files + "./"` + (extra.length ? ` (extra: ${extra.join(', ')})` : '');
+  });
+
+  await test('Precache list never includes tools/ or docs/', () => {
+    const bad = shell.filter((f) => f.startsWith('tools/') || f.startsWith('docs/'));
+    return bad.length ? { pass: false, detail: bad.join(', ') } : 'ok';
+  });
+
+  // 2 ── which shell files exist on the server right now (page is not controlled yet → straight to network)
+  const onServer = new Map();
+  await Promise.all(shell.map(async (p) => {
+    try {
+      const r = await fetch(abs(p), { method: 'HEAD', cache: 'no-store' });
+      onServer.set(p, r.ok);
+    } catch (_) { onServer.set(p, false); }
+  }));
+
+  // 3 ── seed caches that activate must delete / keep
+  await (await caches.open(OLD_CACHE)).put(abs('__old-cache-probe__'), new Response('old'));
+  await (await caches.open(FOREIGN_CACHE)).put(abs('__foreign-cache-probe__'), new Response('keep'));
+
+  // 4 ── register + install + activate
+  let reg = null;
+  const t0 = performance.now();
+  const regResult = await test('Registers ../../sw.js with scope = app root', async () => {
+    reg = await navigator.serviceWorker.register(SW_PATH, { scope: SCOPE });
+    if (reg.scope !== ROOT.href) return { pass: false, detail: `scope is ${reg.scope}, expected ${ROOT.href}` };
+    return `scope ${reg.scope}`;
+  });
+  if (!regResult.pass) { finish(); return; }
+
+  const actResult = await test('Installs and activates (precache never fails the install)', async () => {
+    const worker = reg.installing || reg.waiting || reg.active;
+    if (!worker) throw new Error('registration has no worker');
+    await waitForState(worker, 'activated', 30000);
+    return `activated in ${Math.round(performance.now() - t0)} ms`;
+  });
+  if (!actResult.pass) { finish(); return; }
+
+  await test('Takes control of the page (clients.claim)', async () => {
+    if (!navigator.serviceWorker.controller) await nextControllerChange(8000);
+    return navigator.serviceWorker.controller ? 'page is controlled' : { pass: false, detail: 'not controlled' };
+  });
+
+  let cacheName = 'daybook-v1';
+  await test('Answers GET_VERSION over a MessageChannel', async () => {
+    const reply = await ask(navigator.serviceWorker.controller || reg.active, { type: 'GET_VERSION' });
+    if (!reply || reply.type !== 'VERSION' || !String(reply.cache).startsWith('daybook-')) {
+      return { pass: false, detail: `unexpected reply ${JSON.stringify(reply)}` };
+    }
+    cacheName = reply.cache;
+    return `version ${reply.version} · cache "${reply.cache}"`;
+  });
+
+  // 5 ── cache state after activation
+  await test('Creates its cache and deletes older daybook-* caches', async () => {
+    const names = await caches.keys();
+    const ours = names.filter((n) => n.startsWith('daybook-'));
+    if (!names.includes(cacheName)) return { pass: false, detail: `no "${cacheName}" cache (have: ${names.join(', ')})` };
+    if (names.includes(OLD_CACHE)) return { pass: false, detail: `"${OLD_CACHE}" still exists after activate` };
+    if (ours.length !== 1) return { pass: false, detail: `expected one daybook-* cache, found: ${ours.join(', ')}` };
+    return `caches: ${ours.join(', ')}`;
+  });
+
+  await test("Leaves other apps' caches alone", async () => {
+    const names = await caches.keys();
+    const kept = names.includes(FOREIGN_CACHE);
+    await caches.delete(FOREIGN_CACHE);
+    return kept ? 'ok' : { pass: false, detail: `"${FOREIGN_CACHE}" was deleted` };
+  });
+
+  await test('Precaches every shell file that exists on the server', async () => {
+    const cache = await caches.open(cacheName);
+    const keys = new Set((await cache.keys()).map((r) => r.url));
+    const present = shell.filter((p) => onServer.get(p));
+    const absent = shell.filter((p) => !onServer.get(p));
+    const missing = present.filter((p) => !keys.has(abs(p)));
+    if (missing.length) return { pass: false, detail: `on the server but not cached: ${missing.join(', ')}` };
+    let detail = `${present.length}/${shell.length} shell files cached`;
+    if (absent.length) detail += `\nnot on the server (yet), skipped without failing the install: ${absent.join(', ')}`;
+    return detail;
+  });
+
+  await test('Offline copy of the app shell is ready', async () => {
+    const cache = await caches.open(cacheName);
+    const hasIndex = !!(await cache.match(abs('index.html')));
+    const hasRoot = !!(await cache.match(abs('./')));
+    if (!onServer.get('index.html')) return { skip: true, detail: 'index.html is not on the server yet' };
+    return hasIndex && hasRoot ? 'index.html and ./ cached' : { pass: false, detail: `index.html: ${hasIndex}, ./: ${hasRoot}` };
+  });
+
+  // 6 ── fetch handling (page is controlled now)
+  await test('Serves cached assets first (stale-while-revalidate) and refreshes them', async () => {
+    const cache = await caches.open(cacheName);
+    const url = abs(`manifest.webmanifest?sw-probe=${Date.now()}`);
+    await cache.put(url, new Response('sw-probe', { headers: { 'Content-Type': 'text/plain' } }));
+    const body = await (await fetch(url)).text();
+    if (body !== 'sw-probe') { await cache.delete(url); return { pass: false, detail: 'response did not come from the cache' }; }
+    const refreshed = await poll(async () => {
+      const r = await cache.match(url);
+      return r && (await r.text()).includes('"short_name"');
+    });
+    await cache.delete(url);
+    return refreshed ? 'served from cache, then updated from the network in the background'
+      : { pass: false, detail: 'served from cache, but the background refresh never updated it' };
+  });
+
+  await test('Caches same-origin assets at runtime', async () => {
+    const cache = await caches.open(cacheName);
+    const url = abs('assets/icons/icon-192.png');
+    await cache.delete(url);
+    const res = await fetch(url);
+    if (!res.ok) return { pass: false, detail: `HTTP ${res.status}` };
+    const back = await poll(async () => !!(await cache.match(url)));
+    return back ? 'fetched once → cached' : { pass: false, detail: 'not re-cached after fetch' };
+  });
+
+  await test('Never caches tools/ or docs/', async () => {
+    await fetch(location.href, { cache: 'no-cache' }).catch(() => {});
+    await fetch(abs('docs/SPEC.md')).then((r) => r.blob()).catch(() => {});
+    await sleep(300);
+    const cache = await caches.open(cacheName);
+    const bad = (await cache.keys()).map((r) => rel(r.url)).filter((p) => p.startsWith('tools/') || p.startsWith('docs/'));
+    return bad.length ? { pass: false, detail: bad.join(', ') } : 'ok';
+  });
+
+  // 7 ── update flow: a new worker must wait until the page sends SKIP_WAITING
+  await test('A new version waits, then takes over on {type:"SKIP_WAITING"}', async () => {
+    const reg2 = await navigator.serviceWorker.register(`${SW_PATH}?sw-test=update`, { scope: SCOPE });
+    const w = reg2.installing || reg2.waiting;
+    if (!w) throw new Error('no new worker was installed');
+    await waitForState(w, 'installed', 30000);
+    await sleep(800);
+    if (w.state !== 'installed' || reg2.waiting !== w) {
+      return { pass: false, detail: `new worker did not wait (state: ${w.state}) — automatic skipWaiting?` };
+    }
+    const changed = nextControllerChange(10000);
+    w.postMessage({ type: 'SKIP_WAITING' });
+    await waitForState(w, 'activated', 10000);
+    await changed;
+    // Restore the canonical script URL so the app's own registration stays in sync.
+    const reg3 = await navigator.serviceWorker.register(SW_PATH, { scope: SCOPE });
+    const w3 = reg3.installing || reg3.waiting;
+    if (w3) {
+      await waitForState(w3, 'installed', 30000);
+      w3.postMessage({ type: 'SKIP_WAITING' });
+      await waitForState(w3, 'activated', 10000);
+    }
+    return 'waited in "installed", activated on SKIP_WAITING, controllerchange fired';
+  });
+
+  // 8 ── manifest + icons
+  let manifest = null;
+  const manifestURL = abs('manifest.webmanifest');
+  await test('Manifest is valid and complete', async () => {
+    const res = await fetch(manifestURL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    manifest = JSON.parse(await res.text());
+    const m = manifest;
+    const problems = [];
+    const need = { name: 'string', short_name: 'string', start_url: 'string', scope: 'string', id: 'string',
+                   display: 'string', theme_color: 'string', background_color: 'string', description: 'string' };
+    for (const [k, t] of Object.entries(need)) if (typeof m[k] !== t || !m[k]) problems.push(`missing ${k}`);
+    if (m.display !== 'standalone') problems.push(`display is ${m.display}`);
+    const scope = new URL(m.scope || './', manifestURL).href;
+    if (!new URL(m.start_url || '', manifestURL).href.startsWith(scope)) problems.push('start_url outside scope');
+    const icons = m.icons || [];
+    const has = (size, purpose) => icons.some((i) => (i.sizes || '').split(' ').includes(size)
+      && (i.purpose || 'any').split(' ').includes(purpose) && i.type === 'image/png');
+    if (!has('192x192', 'any')) problems.push('no 192x192 PNG icon');
+    if (!has('512x512', 'any')) problems.push('no 512x512 PNG icon');
+    if (!has('512x512', 'maskable')) problems.push('no maskable 512x512 PNG icon');
+    const ct = res.headers.get('content-type') || '';
+    if (problems.length) return { pass: false, detail: problems.join('; ') };
+    return `"${m.name}" · ${icons.length} icons · ${(m.shortcuts || []).length} shortcuts · ${ct}`;
+  });
+
+  await test('Every manifest icon loads at its declared size', async () => {
+    if (!manifest) return { skip: true, detail: 'no manifest' };
+    const problems = [];
+    const seen = [];
+    for (const icon of manifest.icons || []) {
+      const url = new URL(icon.src, manifestURL).href;
+      try {
+        const img = await loadImage(url);
+        const size = `${img.naturalWidth}x${img.naturalHeight}`;
+        if (icon.sizes !== 'any' && !icon.sizes.split(' ').includes(size)) problems.push(`${icon.src} is ${size}, declared ${icon.sizes}`);
+        if ((icon.purpose || '').includes('maskable') && cornerAlpha(img) !== 255) problems.push(`${icon.src} must be full-bleed (opaque corners)`);
+        seen.push(`${icon.src.split('/').pop()} ${icon.sizes}`);
+      } catch (err) { problems.push(err.message); }
+    }
+    return problems.length ? { pass: false, detail: problems.join('; ') } : seen.join(' · ');
+  });
+
+  await test('Apple touch icon is 180×180 and opaque; favicon is 32×32', async () => {
+    const apple = await loadImage(abs('assets/icons/apple-touch-icon.png'));
+    const fav = await loadImage(abs('assets/icons/favicon-32.png'));
+    const problems = [];
+    if (apple.naturalWidth !== 180 || apple.naturalHeight !== 180) problems.push(`apple-touch-icon is ${apple.naturalWidth}x${apple.naturalHeight}`);
+    if (cornerAlpha(apple) !== 255) problems.push('apple-touch-icon has transparent corners');
+    if (fav.naturalWidth !== 32 || fav.naturalHeight !== 32) problems.push(`favicon is ${fav.naturalWidth}x${fav.naturalHeight}`);
+    return problems.length ? { pass: false, detail: problems.join('; ') } : 'ok';
+  });
+
+  await test('Shortcuts stay in scope and their icons load', async () => {
+    if (!manifest) return { skip: true, detail: 'no manifest' };
+    const scope = new URL(manifest.scope, manifestURL).href;
+    const problems = [];
+    const names = [];
+    for (const s of manifest.shortcuts || []) {
+      const url = new URL(s.url, manifestURL).href;
+      if (!url.startsWith(scope)) problems.push(`${s.name}: url outside scope`);
+      for (const icon of s.icons || []) {
+        try {
+          const img = await loadImage(new URL(icon.src, manifestURL).href);
+          if (`${img.naturalWidth}x${img.naturalHeight}` !== icon.sizes) problems.push(`${icon.src} size mismatch`);
+        } catch (err) { problems.push(err.message); }
+      }
+      names.push(`${s.name} → ${s.url}`);
+    }
+    if (!names.length) problems.push('no shortcuts');
+    return problems.length ? { pass: false, detail: problems.join('; ') } : names.join('\n');
+  });
+
+  await renderCacheList(cacheName).catch(() => {});
+  finish();
+}
+
+$('#rerun').addEventListener('click', () => location.reload());
+$('#reset').addEventListener('click', async () => {
+  await resetAll();
+  $('#summary').replaceChildren(el('span', null, 'Service worker unregistered and caches cleared. Reload to run again.'));
+});
+
+main().catch((err) => {
+  record('Test runner crashed', 'fail', (err && err.stack) || String(err));
+  finish();
+});
+</script>
+</body>
+</html>

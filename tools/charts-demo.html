@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Daybook · charts &amp; icons</title>
+  <link rel="icon" href="../assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/charts.css">
+  <style>
+    /* Demo-page layout only (not shipped with the app). */
+    body { background: var(--bg); }
+    .demo { max-width: 1120px; margin: 0 auto; padding: 28px 16px 72px; }
+    .demo-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+    .demo-mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+                 background: var(--primary); color: var(--primary-contrast); }
+    .demo-top h1 { margin: 0; font-size: var(--fs-2xl); letter-spacing: -0.015em; line-height: 1.15; }
+    .demo-top p { margin: 2px 0 0; color: var(--text-2); font-size: var(--fs-sm); }
+    .demo-theme { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+                  background: var(--surface-2); border: 1px solid var(--border); }
+    .demo-theme button { appearance: none; border: 0; background: transparent; color: var(--text-2); font: inherit;
+                         font-size: 13px; font-weight: 550; min-height: 36px; padding: 0 14px; border-radius: 999px;
+                         cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .demo-theme button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .demo-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    .demo-cell { display: grid; min-width: 0; }
+    @media (min-width: 900px) { .demo-grid { grid-template-columns: 1fr 1fr; } .span-2 { grid-column: span 2; } }
+    .demo-h2 { margin: 34px 0 12px; font-size: 12px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase;
+               color: var(--text-3); }
+    .demo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+                 box-shadow: var(--shadow-sm); padding: 18px 18px 16px; min-width: 0; }
+    .demo-card h3 { margin: 0; font-size: var(--fs-md); font-weight: 650; letter-spacing: -0.005em; }
+    .demo-card .sub { margin: 2px 0 14px; color: var(--text-2); font-size: var(--fs-sm); }
+    .demo-kpi { display: flex; align-items: baseline; gap: 10px; margin: -6px 0 12px; }
+    .demo-kpi b { font-size: var(--fs-2xl); font-weight: 650; letter-spacing: -0.02em; }
+    .demo-kpi span { font-size: var(--fs-sm); color: var(--text-2); }
+    .tone-profit { color: var(--profit); } .tone-loss { color: var(--loss); }
+    .demo-status { margin-top: 10px; font-size: 12.5px; color: var(--text-3); min-height: 1.4em; }
+    .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px;
+            display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 12px; box-shadow: var(--shadow-sm); }
+    .tile-label { grid-column: 1 / -1; font-size: 12.5px; color: var(--text-2); font-weight: 500; }
+    .tile-value { white-space: nowrap; font-size: 22px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; }
+    .tile-sub { grid-column: 1 / -1; font-size: 12px; color: var(--text-3); }
+    .edge-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+    .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 8px;
+                 border-radius: 10px; color: var(--text); font-size: 10.5px; text-align: center; }
+    .icon-cell:hover { background: var(--surface-2); }
+    .icon-cell span { color: var(--text-3); word-break: break-word; }
+    .demo-icon-check { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px;
+                  font-size: 13px; font-weight: 550; }
+    .demo-icon-check.ok { background: var(--success-soft); color: var(--success); }
+    .demo-icon-check.bad { background: var(--danger-soft); color: var(--danger); }
+    .row-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <div class="demo" id="demo">
+    <header class="demo-top">
+      <div class="demo-mark" id="mark"></div>
+      <div>
+        <h1>Charts &amp; icons</h1>
+        <p>Every chart in <code>js/core/charts.js</code> with realistic Daybook data. Hover, tap or focus + arrow keys.</p>
+      </div>
+      <div class="demo-theme" role="group" aria-label="Theme" id="theme"></div>
+    </header>
+    <main id="root"></main>
+  </div>
+  <script type="module" src="charts-demo.js"></script>
+</body>
+</html>

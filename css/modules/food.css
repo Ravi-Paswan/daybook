@@ -1,0 +1,384 @@
+/* Food module (SPEC 4.2). Page styles are scoped under .food-page; the editor sheet lives on <body>,
+   so its few styles are scoped under .food-sheet (the className passed to openSheet). */
+
+/* ─────────────────────────────── layout ─────────────────────────────── */
+.food-page .food-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+}
+.food-page .food-main,
+.food-page .food-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .food-page .food-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 372px);
+    gap: var(--s-5);
+  }
+}
+.food-page .food-nav { display: flex; min-width: 0; }
+
+/* ─────────────────────────────── summary ─────────────────────────────── */
+.food-page .food-summary {
+  gap: var(--s-4);
+  container-type: inline-size;
+}
+.food-page .food-rings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+.food-page .food-ring-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  text-align: center;
+}
+.food-page .food-ring-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.food-page .food-ring-name { font-weight: 650; color: var(--text); }
+.food-page .food-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.food-page .food-status.muted { font-weight: 500; }
+.food-page .food-status-good { color: var(--success); }
+.food-page .food-ring-block .ring-sub { white-space: nowrap; }
+
+@container (min-width: 520px) {
+  .food-page .food-ring-block {
+    flex-direction: row;
+    justify-content: center;
+    gap: var(--s-4);
+    text-align: left;
+  }
+  .food-page .food-ring-caption { align-items: flex-start; }
+}
+
+/* macro split */
+.food-page .food-macro-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: var(--r-full);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.food-page .food-macro-seg {
+  flex-basis: 0;
+  min-width: 4px;
+  background: var(--seg);
+}
+.food-page .food-macro-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+.food-page .food-macro-stat { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.food-page .food-macro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-weight: 560;
+  color: var(--text-2);
+}
+.food-page .food-macro-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--seg); flex: none; }
+.food-page .food-macro-value { font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.01em; }
+.food-page .food-macro-sub { font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.food-page .food-divider { height: 1px; background: var(--border); }
+
+/* ─────────────────────────────── water ─────────────────────────────── */
+.food-page .food-water-head { display: flex; align-items: center; gap: var(--s-3); }
+.food-page .food-water-text { flex: 1 1 auto; min-width: 0; }
+.food-page .food-water-title { margin: 0; font-size: var(--fs-md); font-weight: 650; line-height: 1.3; }
+.food-page .food-water-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.food-page .food-water-value { font-size: var(--fs-lg); font-weight: 700; }
+.food-page .food-water-sub { font-size: var(--fs-sm); color: var(--text-3); }
+.food-page .food-water-done:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--success);
+}
+.food-page .food-water-actions { display: flex; gap: var(--s-2); flex: none; }
+.food-page .food-water-btn { width: 44px; min-width: 44px; padding: 0; border-radius: var(--r-full); }
+
+.food-page .food-glasses {
+  display: grid;
+  grid-template-columns: repeat(var(--glass-cols, 8), minmax(0, 56px));
+  gap: 5px;
+  margin-top: var(--s-3);
+}
+.food-page .food-glass {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text-3);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.food-page .food-glass .icon { opacity: 0.6; transition: transform var(--dur) var(--ease), opacity var(--dur-fast) var(--ease); }
+.food-page .food-glass:hover { border-color: color-mix(in srgb, var(--water) 40%, var(--border)); color: var(--water); }
+.food-page .food-glass:active { transform: scale(0.94); }
+.food-page .food-glass.is-extra:not(.is-filled) { border-style: dashed; }
+.food-page .food-glass.is-filled {
+  background: color-mix(in srgb, var(--water) 15%, var(--surface));
+  border-color: color-mix(in srgb, var(--water) 50%, var(--border));
+  color: var(--water);
+}
+.food-page .food-glass.is-filled .icon { opacity: 1; transform: scale(1.06); }
+.food-page .food-water.is-done .food-glass.is-filled { background: color-mix(in srgb, var(--water) 22%, var(--surface)); }
+
+/* ─────────────────────────────── meals ─────────────────────────────── */
+.food-page .food-meals-head { margin-bottom: 0; }
+.food-page .food-group {
+  padding: var(--s-2) var(--s-4) var(--s-3);
+  border-top: 1px solid var(--border);
+}
+.food-page .food-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+}
+.food-page .food-group-title { margin: 0; font-size: var(--fs-md); font-weight: 650; }
+.food-page .food-group-total { font-size: var(--fs-sm); color: var(--text-3); font-weight: 560; }
+.food-page .food-group-add { position: relative; margin-right: -6px; }
+.food-page .food-group-add::after { content: ""; position: absolute; inset: -4px -2px; }
+
+.food-page .food-entries { display: flex; flex-direction: column; margin: 0 calc(-1 * var(--s-2)); }
+.food-page .food-entry { position: relative; display: flex; align-items: center; gap: var(--s-2); }
+.food-page .food-entry + .food-entry::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--s-2);
+  right: var(--s-2);
+  border-top: 1px solid var(--border);
+}
+.food-page .food-entry-main {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px var(--s-2);
+  border: 0;
+  border-radius: var(--r);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.food-page .food-entry-main:hover { background: var(--hover); }
+.food-page .food-entry-main:active { background: var(--press); }
+.food-page .food-entry-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+.food-page .food-entry-title {
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.food-page .food-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.food-page .food-entry-meta > span + span::before { content: "·"; margin-right: 6px; color: var(--text-3); }
+.food-page .food-meta-strong { color: var(--text-2); font-weight: 600; }
+.food-page .food-entry-note {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.food-page .food-entry > .thumb { margin-right: var(--s-2); border-radius: var(--r); }
+@media (max-width: 519.98px) {
+  .food-page .food-meta-extra { display: none; }
+}
+
+.food-page .food-quality {
+  --q: var(--success);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--q) 12%, transparent);
+  color: color-mix(in srgb, var(--q) 72%, var(--text));
+  font-size: var(--fs-xs);
+  font-weight: 620;
+  white-space: nowrap;
+}
+.food-page .food-quality.is-ok { --q: var(--warning); }
+.food-page .food-quality.is-poor { --q: var(--danger); }
+.food-page .food-quality-emoji { font-size: 13px; line-height: 1; }
+
+.food-page .food-group-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 0 var(--s-3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 560;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.food-page .food-group-empty:hover {
+  border-color: color-mix(in srgb, var(--food) 55%, var(--border));
+  background: color-mix(in srgb, var(--food) 7%, transparent);
+  color: var(--text);
+}
+.food-page .food-group-empty .icon { color: var(--food); }
+
+/* ─────────────────────────────── frequent foods ─────────────────────────────── */
+.food-page .food-freq-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr)); gap: var(--s-2); }
+.food-page .food-freq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  max-width: 100%;
+  min-height: 48px;
+  padding: 6px 12px 6px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.food-page .food-freq-chip:hover { border-color: color-mix(in srgb, var(--food) 45%, var(--border)); background: color-mix(in srgb, var(--food) 5%, var(--surface)); }
+.food-page .food-freq-chip:active { transform: scale(0.97); }
+.food-page .food-freq-chip:disabled { cursor: default; }
+.food-page .food-freq-plus {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--food) 14%, transparent);
+  color: var(--food);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.food-page .food-freq-chip.is-done .food-freq-plus { background: var(--success); color: var(--surface); }
+.food-page .food-freq-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.food-page .food-freq-title {
+  max-width: 100%;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.food-page .food-freq-meta { font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; }
+
+/* ─────────────────────────────── trends ─────────────────────────────── */
+.food-page .food-trends { container-type: inline-size; }
+.food-page .food-trends .card-actions { flex: none; }
+.food-page .food-avgs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+@container (min-width: 560px) {
+  .food-page .food-avgs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.food-page .food-avg {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: var(--s-3);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.food-page .food-avg-label { font-size: var(--fs-xs); font-weight: 560; color: var(--text-2); }
+.food-page .food-avg-value { font-size: var(--fs-xl); font-weight: 720; letter-spacing: -0.01em; line-height: 1.2; }
+.food-page .food-avg-unit { margin-left: 4px; font-size: var(--fs-xs); font-weight: 520; color: var(--text-3); letter-spacing: 0; }
+.food-page .food-avg-sub { font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.food-page .food-chart { margin-top: var(--s-5); min-width: 0; }
+.food-page .food-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+}
+.food-page .food-chart-title { margin: 0; font-size: var(--fs-sm); font-weight: 650; }
+.food-page .food-chart-sub { font-size: var(--fs-xs); color: var(--text-3); white-space: nowrap; }
+.food-page .food-chart-note { margin: var(--s-2) 0 0; font-size: var(--fs-xs); color: var(--text-3); text-align: center; }
+.food-page .food-donut { display: flex; flex-direction: column; }
+
+/* ─────────────────────────────── editor sheet ─────────────────────────────── */
+.food-sheet .food-macro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+@media (min-width: 520px) {
+  .food-sheet .food-macro-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.food-sheet .food-macro-grid .input { min-width: 0; }
+.food-sheet .food-photo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.food-sheet .food-photo .thumb { border-radius: var(--r); }
+
+@media (prefers-reduced-motion: reduce) {
+  .food-page .food-glass,
+  .food-page .food-glass .icon,
+  .food-page .food-freq-chip,
+  .food-page .food-entry-main { transition: none; }
+}

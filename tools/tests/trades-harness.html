@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Daybook · trades analytics harness</title>
+  <meta name="color-scheme" content="light dark">
+  <script>
+    // ?theme=light|dark before first paint.
+    (function () {
+      try {
+        var t = new URLSearchParams(location.search).get('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="../../css/tokens.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/components.css">
+  <link rel="stylesheet" href="../../css/charts.css">
+  <link rel="stylesheet" href="../../css/modules/trades-analytics.css">
+  <style>
+    /* Harness-only chrome (not part of the app). */
+    body { background: var(--bg); }
+    .hx-top {
+      position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+      padding: 10px var(--s-4); background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+    }
+    .hx-top strong { font-size: var(--fs-md); }
+    .hx-main { padding: var(--s-5) var(--s-4) 120px; }
+    .hx-log { font: 12px var(--font-mono); color: var(--text-3); }
+  </style>
+</head>
+<body>
+  <div class="hx-top">
+    <strong>Trades harness</strong>
+    <div id="hx-tabs"></div>
+    <span class="spacer"></span>
+    <span class="hx-log" id="hx-log" aria-live="polite"></span>
+  </div>
+  <main class="hx-main" id="hx-view"><div class="page"><p class="muted">Loading…</p></div></main>
+  <script type="module" src="trades-harness.js"></script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+/* Settings (SPEC 4.11). Page styles are scoped under .settings-page; sheets opened from Settings mount on <body>
+   and are scoped under .settings-sheet (the sheet's className). Shared classes are reused, not restyled. */
+
+/* ───────────────────────────── layout */
+.settings-page .settings-layout { display: block; min-width: 0; }
+.settings-page .settings-sections { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.settings-page .settings-section { min-width: 0; }
+.settings-page .settings-section .card-title:focus { outline: none; }
+.settings-page .settings-section .card-title:focus-visible { outline: none; }
+.settings-page .settings-index { display: none; }
+
+@media (min-width: 960px) {
+  .settings-page .settings-layout {
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    gap: var(--s-6);
+    align-items: start;
+  }
+  .settings-page .settings-sections { gap: var(--s-5); }
+  .settings-page .settings-index {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    position: sticky;
+    top: var(--s-6);
+    max-height: calc(100vh - 2 * var(--s-6));
+    overflow-y: auto;
+    padding-bottom: var(--s-4);
+    scrollbar-width: thin;
+  }
+  .settings-page .settings-strip { display: none; }
+  .settings-page .settings-section { scroll-margin-top: calc(var(--s-6) - var(--topbar-h, 56px) - 64px); }
+}
+
+/* desktop index */
+.settings-page .settings-index-group { display: flex; flex-direction: column; gap: 2px; }
+.settings-page .settings-index-heading {
+  padding: 0 var(--s-3) var(--s-1);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.settings-page .settings-index-link {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 38px;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  font-weight: 520;
+  text-decoration: none;
+  transition: background var(--dur-fast, 150ms) var(--ease, ease-out), color var(--dur-fast, 150ms) var(--ease, ease-out);
+}
+.settings-page .settings-index-link .icon { color: var(--text-3); flex: none; }
+.settings-page .settings-index-link:hover { background: var(--surface-2); color: var(--text); }
+.settings-page .settings-index-link[aria-current] { background: var(--primary-soft); color: var(--primary); font-weight: 620; }
+.settings-page .settings-index-link[aria-current] .icon { color: var(--primary); }
+.settings-page .settings-index-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+/* phone/tablet strip */
+.settings-page .settings-strip {
+  position: sticky;
+  top: calc(var(--topbar-h, 56px) + env(safe-area-inset-top, 0px));
+  z-index: var(--z-sticky, 20);
+  display: flex;
+  gap: var(--s-2);
+  margin: calc(var(--s-2) * -1) calc(var(--shell-gutter, 16px) * -1) 0;
+  padding: var(--s-2) var(--shell-gutter, 16px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.settings-page .settings-strip::-webkit-scrollbar { display: none; }
+.settings-page .settings-strip-link {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 560;
+  white-space: nowrap;
+  text-decoration: none;
+  position: relative;
+}
+.settings-page .settings-strip-link::after { content: ''; position: absolute; inset: -4px 0; } /* 44px tap target */
+.settings-page .settings-strip-link[aria-current] { background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary) 35%, transparent); color: var(--primary); }
+.settings-page .settings-strip-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ───────────────────────────── section chrome */
+.settings-page .settings-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--success);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity var(--dur, 200ms) var(--ease, ease-out), transform var(--dur, 200ms) var(--ease, ease-out);
+  white-space: nowrap;
+}
+.settings-page .settings-saved.is-on { opacity: 1; transform: none; }
+.settings-page .settings-rows { display: flex; flex-direction: column; gap: var(--s-4); }
+
+.settings-page .settings-sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}
+.settings-page .settings-sub-title, .settings-sheet .settings-sub-title { margin: 0; font-size: var(--fs-md); font-weight: 650; color: var(--text); }
+.settings-page .settings-sub-hint { margin: calc(var(--s-2) * -1) 0 0; font-size: var(--fs-sm); color: var(--text-2); }
+.settings-page .settings-danger .settings-sub-title { color: var(--danger); }
+.settings-page .settings-danger .btn { align-self: flex-start; }
+
+/* ───────────────────────────── lists */
+.settings-page .settings-list {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: clip;
+  background: var(--surface);
+}
+.settings-page .settings-item { min-height: 56px; padding: 8px 6px 8px 12px; --divider-inset: 12px; }
+.settings-page .settings-item .list-item-title { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; overflow-wrap: anywhere; }
+.settings-page .settings-item-actions { display: flex; align-items: center; gap: 2px; flex: none; margin-left: auto; }
+.settings-page .settings-item-actions .btn { min-width: 40px; min-height: 40px; color: var(--text-2); }
+.settings-page .settings-item-actions .settings-del:not(:disabled):hover { color: var(--danger); background: var(--danger-soft); }
+.settings-page .settings-item-lock { display: inline-grid; place-items: center; width: 40px; height: 40px; color: var(--text-3); }
+.settings-page .settings-list-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.settings-page .settings-rule-n {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-full);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.settings-page .settings-rule .list-item-title { white-space: normal; font-weight: 520; }
+
+/* chip lists */
+.settings-page .settings-strings { display: flex; flex-direction: column; gap: var(--s-3); }
+.settings-page .settings-pills { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.settings-page .settings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 2px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  font-weight: 540;
+}
+.settings-page .settings-pill-text { overflow-wrap: anywhere; }
+.settings-page .settings-pill-x {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.settings-page .settings-pill-x:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+.settings-page .settings-pill-x:disabled { opacity: 0.35; cursor: not-allowed; }
+.settings-page .settings-pill-x:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.settings-page .settings-add-row { display: flex; gap: var(--s-2); align-items: center; }
+.settings-page .settings-add-row .input { flex: 1 1 auto; min-width: 0; }
+.settings-page .settings-add-row .btn { flex: none; }
+
+/* ───────────────────────────── data & backup */
+.settings-page .settings-backup-status {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r);
+  border: 1px solid transparent;
+}
+.settings-page .settings-backup-status.is-warning { background: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 28%, transparent); }
+.settings-page .settings-backup-status.is-success { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 24%, transparent); }
+.settings-page .settings-backup-icon { flex: none; display: inline-grid; padding-top: 1px; }
+.settings-page .is-warning .settings-backup-icon { color: var(--warning); }
+.settings-page .is-success .settings-backup-icon { color: var(--success); }
+.settings-page .settings-backup-title { font-weight: 650; }
+.settings-page .settings-backup-sub { font-size: var(--fs-sm); color: var(--text-2); }
+.settings-page .settings-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.settings-page .settings-restore-result { align-items: center; font-size: var(--fs-sm); --accent: var(--success); }
+.settings-page .settings-restore-result .icon { color: var(--success); flex: none; }
+
+@media (max-width: 639.98px) {
+  .settings-page .settings-actions .btn { flex: 1 1 100%; }
+}
+
+.settings-page .settings-csv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--s-2); }
+.settings-page .settings-csv-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 52px;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 560;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast, 150ms) var(--ease, ease-out), border-color var(--dur-fast, 150ms) var(--ease, ease-out);
+}
+.settings-page .settings-csv-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.settings-page .settings-csv-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.settings-page .settings-csv-btn:disabled { opacity: 0.6; cursor: progress; }
+.settings-page .settings-csv-label { flex: 1 1 auto; min-width: 0; }
+.settings-page .settings-csv-n { color: var(--text-3); font-size: var(--fs-xs); }
+.settings-page .settings-csv-btn > .icon:last-child { color: var(--text-3); flex: none; }
+
+.settings-page .settings-usage { display: flex; flex-direction: column; gap: var(--s-2); }
+.settings-page .settings-storage { display: flex; flex-direction: column; gap: var(--s-3); }
+.settings-page .settings-persist {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  padding: var(--s-3);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.settings-page .settings-persist > span { flex: 1 1 200px; }
+.settings-page .settings-persist strong { color: var(--text); }
+.settings-page .settings-persist > .icon { color: var(--text-3); flex: none; }
+.settings-page .settings-persist.is-on > .icon { color: var(--success); }
+.settings-page .settings-counts-details { border: 1px solid var(--border); border-radius: var(--r); }
+.settings-page .settings-counts-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--fs-sm);
+  font-weight: 560;
+}
+.settings-page .settings-counts-details > summary::-webkit-details-marker { display: none; }
+.settings-page .settings-counts-details > summary .icon { color: var(--text-3); transition: transform var(--dur, 200ms) var(--ease, ease-out); }
+.settings-page .settings-counts-details[open] > summary .icon { transform: rotate(180deg); }
+.settings-page .settings-counts-details > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r); }
+.settings-page .settings-counts-details .settings-kv { padding: 0 var(--s-3) var(--s-3); }
+.settings-page .settings-kv dd, .settings-sheet .settings-kv dd { font-variant-numeric: tabular-nums; }
+.settings-page .settings-sample-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.settings-page .settings-sample-row p { margin: 0; flex: 1 1 260px; }
+
+/* ───────────────────────────── install / shortcuts / about */
+.settings-page .settings-install-state { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-sm); }
+.settings-page .settings-install-state.is-on .icon { color: var(--success); }
+.settings-page .settings-steps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); }
+.settings-page .settings-steps .icon { vertical-align: -3px; color: var(--primary); }
+.settings-page .settings-shortcuts { display: grid; grid-template-columns: 1fr; gap: 0 var(--s-6); }
+@media (min-width: 640px) { .settings-page .settings-shortcuts { grid-template-columns: 1fr 1fr; } }
+.settings-page .settings-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: 40px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+.settings-page .settings-keys { display: inline-flex; align-items: center; gap: 6px; color: var(--text-3); font-size: var(--fs-xs); }
+.settings-page kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.settings-page .settings-about { display: flex; flex-direction: column; gap: var(--s-4); }
+.settings-page .settings-about-brand { display: flex; align-items: center; gap: var(--s-3); }
+.settings-page .settings-brand { width: 44px; height: 44px; }
+.settings-page .settings-privacy {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-4);
+  border-radius: var(--r);
+  background: var(--primary-soft);
+}
+.settings-page .settings-privacy > .icon { color: var(--primary); flex: none; margin-top: 1px; }
+.settings-page .settings-privacy .text-sm { margin-top: 2px; }
+
+/* ───────────────────────────── sheets (mounted on <body>) */
+.settings-sheet .settings-cat-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.settings-sheet .settings-cat-preview-name { font-size: var(--fs-lg); font-weight: 650; overflow-wrap: anywhere; }
+.settings-sheet .settings-emoji-input { max-width: 140px; font-size: 22px; }
+.settings-sheet .settings-emoji-suggest { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-sheet .settings-emoji-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: 20px;
+  cursor: pointer;
+}
+.settings-sheet .settings-emoji-btn:hover { background: var(--surface-2); }
+.settings-sheet .settings-emoji-btn:focus-visible,
+.settings-sheet .settings-swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.settings-sheet .settings-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-sheet .settings-swatch {
+  width: 36px;
+  height: 36px;
+  margin: 4px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--swatch);
+  cursor: pointer;
+  position: relative;
+  transition: transform var(--dur-fast, 150ms) var(--ease, ease-out);
+}
+.settings-sheet .settings-swatch[aria-checked='true'] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--swatch); }
+.settings-sheet .settings-swatch[aria-checked='true']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 7px;
+  height: 13px;
+  border: solid #fff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.settings-sheet .settings-check, .settings-page .settings-check {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 44px;
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.settings-sheet .settings-check[hidden] { display: none; }
+.settings-sheet .settings-check input { width: 20px; height: 20px; accent-color: var(--primary); flex: none; }
+
+.settings-sheet .settings-restore-file {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  min-width: 0;
+}
+.settings-sheet .settings-restore-file > div { min-width: 0; }
+.settings-sheet .settings-restore-file > .icon { color: var(--primary); flex: none; }
+.settings-sheet .settings-modes { display: flex; flex-direction: column; gap: var(--s-2); }
+.settings-sheet .settings-mode {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: border-color var(--dur-fast, 150ms) var(--ease, ease-out), background var(--dur-fast, 150ms) var(--ease, ease-out);
+}
+.settings-sheet .settings-mode input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--primary); }
+.settings-sheet .settings-mode.is-selected { border-color: color-mix(in srgb, var(--primary) 55%, transparent); background: var(--primary-soft); }
+.settings-sheet .settings-mode:has(input[value='replace']).is-selected { border-color: color-mix(in srgb, var(--danger) 50%, transparent); background: var(--danger-soft); }
+.settings-sheet .settings-mode:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.settings-sheet .settings-mode-icon { color: var(--text-2); padding-top: 1px; }
+.settings-sheet .settings-mode-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settings-sheet .settings-mode-title { display: flex; align-items: center; gap: var(--s-2); font-weight: 650; }
+.settings-sheet .settings-mode-sub { font-size: var(--fs-sm); color: var(--text-2); }
+.settings-sheet .settings-delete-warn { --accent: var(--danger); }
+.settings-sheet .settings-delete-warn > .icon { color: var(--danger); flex: none; }
+.settings-sheet .settings-delete-backup { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+
+@media (min-width: 960px) {
+  .settings-page .settings-strip { display: none; }
+}
+
+/* ------------------------------------------------------------------ Account & sync */
+.settings-page .settings-sync-form { max-width: 440px; }
+.settings-page .settings-sync-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.settings-page .settings-sync-msg { display: flex; gap: var(--s-2); align-items: flex-start; font-size: var(--fs-sm); padding: var(--s-2) var(--s-3); border-radius: var(--r); background: var(--primary-soft); }
+.settings-page .settings-sync-msg:empty { display: none; }
+.settings-page .settings-sync-msg > .icon { flex: none; margin-top: 1px; color: var(--primary); }
+.settings-page .settings-sync-msg.is-error { background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.settings-page .settings-sync-msg.is-error > .icon { color: var(--danger); }
+.settings-page .settings-sync-msg.is-success > .icon { color: var(--success); }
+.settings-page .settings-sync-head { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-3); min-width: 0; }
+.settings-page .settings-sync-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--primary-soft); color: var(--primary); }
+.settings-page .settings-sync-head.is-syncing .settings-sync-icon .icon { animation: settings-sync-pulse 1.2s ease-in-out infinite; }
+.settings-page .settings-sync-head.is-error .settings-sync-icon { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
+.settings-page .settings-sync-head.is-offline .settings-sync-icon { background: var(--surface-2, var(--primary-soft)); color: var(--text-2); }
+.settings-page .settings-sync-who { min-width: 0; }
+.settings-page .settings-sync-state { color: var(--text-2); }
+.settings-page .settings-sync-head.is-error .settings-sync-state { color: var(--danger); }
+.settings-page .settings-sync-warn { --accent: var(--danger); margin-bottom: var(--s-3); }
+.settings-page .settings-sync-warn > .icon { color: var(--danger); flex: none; }
+@keyframes settings-sync-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .settings-page .settings-sync-head.is-syncing .settings-sync-icon .icon { animation: none; } }

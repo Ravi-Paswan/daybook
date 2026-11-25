@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<title>Daybook</title>
+<style>.daybook-s{display:none}@media (max-width:40px){.daybook-f{display:none}.daybook-s{display:inline}}</style>
+<defs>
+<linearGradient id="daybook-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+<radialGradient id="daybook-glow" cx="92.16" cy="0" r="460.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.25" stop-color="#fff" stop-opacity="0.12"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.06"/><stop offset="0.75" stop-color="#fff" stop-opacity="0.01"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<filter id="daybook-shadow" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#1e1b4b" flood-opacity="0.28"/></filter>
+</defs>
+<rect width="512" height="512" rx="115" fill="url(#daybook-bg)"/>
+<rect width="512" height="512" rx="115" fill="url(#daybook-glow)"/>
+<g class="daybook-f"><g fill="#fff" filter="url(#daybook-shadow)"><path d="M176 250a80 80 0 0 1 160 0z"/><line x1="256" y1="144" x2="256" y2="100" stroke="#fff" stroke-width="30" stroke-linecap="round"/><line x1="334.77" y1="179.07" x2="367.47" y2="149.63" stroke="#fff" stroke-width="30" stroke-linecap="round"/><line x1="177.23" y1="179.07" x2="144.53" y2="149.63" stroke="#fff" stroke-width="30" stroke-linecap="round"/><rect x="112" y="273" width="288" height="34" rx="17"/></g><g fill="#fff" opacity="0.8"><rect x="112" y="332" width="218" height="28" rx="14"/></g><g fill="#fff" opacity="0.55"><rect x="112" y="384" width="138" height="28" rx="14"/></g></g>
+<g class="daybook-s"><g fill="#fff"><path d="M152 262a104 104 0 0 1 208 0z"/><line x1="256" y1="122" x2="256" y2="66" stroke="#fff" stroke-width="46" stroke-linecap="round"/><line x1="363.25" y1="172.01" x2="406.14" y2="136.01" stroke="#fff" stroke-width="46" stroke-linecap="round"/><line x1="148.75" y1="172.01" x2="105.86" y2="136.01" stroke="#fff" stroke-width="46" stroke-linecap="round"/><rect x="98" y="295" width="316" height="50" rx="25"/></g><g fill="#fff" opacity="0.72"><rect x="98" y="379" width="208" height="46" rx="23"/></g></g>
+</svg>
